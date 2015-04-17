@@ -1,0 +1,252 @@
+2015-04-16 00:30:04 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{put,1,1}}
+** When Server state == []
+** Reason for termination == 
+** {function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:30:04 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 610
+    stack_size: 27
+    reductions: 143
+  neighbours:
+2015-04-16 00:30:04 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:30:38 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{put,1,1}}
+** When Server state == []
+** Reason for termination == 
+** {function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:30:38 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.71.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 610
+    stack_size: 27
+    reductions: 143
+  neighbours:
+2015-04-16 00:30:38 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {function_clause,[{sulibarri_dht_node,handle_cast,[{put,1,1},[]],[{file,"src/sulibarri_dht_node.erl"},{line,49}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.71.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:31:09 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{b_put,{1,1,nonode@nohost}}}
+** When Server state == []
+** Reason for termination == 
+** {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:31:09 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 987
+    stack_size: 27
+    reductions: 909
+  neighbours:
+2015-04-16 00:31:09 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:32:46 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{b_put,{1,1,nonode@nohost}}}
+** When Server state == []
+** Reason for termination == 
+** {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:32:46 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 987
+    stack_size: 27
+    reductions: 911
+  neighbours:
+2015-04-16 00:32:46 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,12}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:37:13 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{b_put,{1,1,nonode@nohost}}}
+** When Server state == []
+** Reason for termination == 
+** {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:37:13 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 987
+    stack_size: 27
+    reductions: 911
+  neighbours:
+2015-04-16 00:37:13 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:40:03 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {'$gen_cast',{b_put,{1,1,nonode@nohost}}}
+** When Server state == []
+** Reason for termination == 
+** {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:40:03 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 987
+    stack_size: 27
+    reductions: 909
+  neighbours:
+2015-04-16 00:40:03 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {badarg,[{ets,insert,[dht_ets,{1,1}],[]},{sulibarri_dht_ets_store,put,2,[{file,"src/sulibarri_dht_ets_store.erl"},{line,13}]},{sulibarri_dht_node,handle_cast,2,[{file,"src/sulibarri_dht_node.erl"},{line,73}]},{gen_server,try_dispatch,4,[{file,"gen_server.erl"},{line,593}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,659}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:43:58 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {get,1}
+** When Server state == []
+** Reason for termination == 
+** {{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:43:58 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.71.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 610
+    stack_size: 27
+    reductions: 144
+  neighbours:
+2015-04-16 00:43:58 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.71.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 00:47:27 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {get,1}
+** When Server state == []
+** Reason for termination == 
+** {{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 00:47:27 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.70.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.68.0>]
+    messages: []
+    links: [<0.69.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 610
+    stack_size: 27
+    reductions: 144
+  neighbours:
+2015-04-16 00:47:27 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {{badmatch,{error,not_found}},[{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,46}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.70.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+
+2015-04-16 11:47:28 =ERROR REPORT====
+** Generic server sulibarri_dht_node terminating 
+** Last message in was {join,nodeA@localhost}
+** When Server state == []
+** Reason for termination == 
+** {'module could not be loaded',[{bet_adm,ping,[nodeA@localhost],[]},{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,58}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+2015-04-16 11:47:28 =CRASH REPORT====
+  crasher:
+    initial call: sulibarri_dht_node:init/1
+    pid: <0.76.0>
+    registered_name: sulibarri_dht_node
+    exception exit: {{undef,[{bet_adm,ping,[nodeA@localhost],[]},{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,58}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]},[{gen_server,terminate,7,[{file,"gen_server.erl"},{line,804}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+    ancestors: [sulibarri_dht_sup,<0.74.0>]
+    messages: []
+    links: [<0.75.0>]
+    dictionary: []
+    trap_exit: false
+    status: running
+    heap_size: 610
+    stack_size: 27
+    reductions: 165
+  neighbours:
+2015-04-16 11:47:28 =SUPERVISOR REPORT====
+     Supervisor: {local,sulibarri_dht_sup}
+     Context:    child_terminated
+     Reason:     {undef,[{bet_adm,ping,[nodeA@localhost],[]},{sulibarri_dht_node,handle_call,3,[{file,"src/sulibarri_dht_node.erl"},{line,58}]},{gen_server,try_handle_call,4,[{file,"gen_server.erl"},{line,607}]},{gen_server,handle_msg,5,[{file,"gen_server.erl"},{line,639}]},{proc_lib,init_p_do_apply,3,[{file,"proc_lib.erl"},{line,237}]}]}
+     Offender:   [{pid,<0.76.0>},{name,sulibarri_dht_node},{mfargs,{sulibarri_dht_node,start_link,[]}},{restart_type,permanent},{shutdown,5000},{child_type,worker}]
+

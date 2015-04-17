@@ -1,0 +1,20 @@
+{application, sulibarri_dht,
+ [
+  {description, "Distributed Hash Table"},
+  {vsn, "0.1.0"},
+  {modules, [
+              sulibarri_dht_client,
+              sulibarri_dht_app,
+              sulibarri_dht_ets_store,
+              sulibarri_dht_node,
+              sulibarri_dht_sup
+              ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  lager
+                 ]},
+  {mod, { sulibarri_dht_app, []}},
+  {env, []}
+ ]}.
