@@ -9,7 +9,7 @@
 -export([init/1]).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
+-define(CHILD(I, Type), {I, {I, start_link, []}, permanent, infinity, Type, [I]}).
 
 %% ===================================================================
 %% API functions
@@ -23,7 +23,9 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-	Children = [?CHILD(sulibarri_dht_node, worker)],
+	Children = [?CHILD(sulibarri_dht_node, worker),
+				?CHILD(sulibarri_dht_storage_sup, supervisor),
+				?CHILD(sulibarri_dht_ring_manager, worker)],
 
-    {ok, { {one_for_one, 5, 10}, Children} }.
+    {ok, { {one_for_one, 0, 1}, Children} }.
 

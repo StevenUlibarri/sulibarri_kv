@@ -13,7 +13,6 @@ start() ->
 	application:start(sulibarri_dht).
 
 start(_StartType, _StartArgs) ->
-	sulibarri_dht_ets_store:init(),
     sulibarri_dht_sup:start_link().
 
 stop(_State) ->
