@@ -1,7 +1,5 @@
 -module(sulibarri_dht_client).
 
-
-
 %%%-------------------------------------------
 %%% @author 
 %%% @copyright
