@@ -1,23 +1,106 @@
 -module(sulibarri_dht_client).
--export([cluster/0, cluster/1, put/2, get/1, delete/1, output/1]).
 
-cluster() ->
-	sulibarri_dht_node:cluster().
 
-cluster(Node) ->
-	sulibarri_dht_node:cluster(Node).
+
+%%%-------------------------------------------
+%%% @author 
+%%% @copyright
+%%% @doc 
+%%% @end
+%%%-------------------------------------------
+
+-behaviour(gen_server).
+
+-define(SERVER, ?MODULE).
+
+%% ------------------------------------------------------------------
+%% API Function Exports
+%% ------------------------------------------------------------------
+
+-export([
+        start_link/0,
+        new_cluster/0,
+        join_cluster/1,
+        put/2,
+        get/1,
+        delete/1
+        ]).
+
+%% ------------------------------------------------------------------
+%% gen_server Function Exports
+%% ------------------------------------------------------------------
+
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         terminate/2, code_change/3]).
+
+%% ------------------------------------------------------------------
+%% API Function Definitions
+%% ------------------------------------------------------------------
+
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+new_cluster() ->
+	gen_server:cast(?SERVER, new_cluster).
+
+join_cluster(Node) ->
+	gen_server:cast(?SERVER, {join_cluster, Node}).
 
 put(Key, Value) ->
-	sulibarri_dht_node:put(node(), Key, Value).
+	gen_server:cast(?SERVER, {put, Key, Value}).
 
 get(Key) ->
-	sulibarri_dht_node:get(node(), Key).
+	gen_server:cast(?SERVER, {get, Key}).
 
 delete(Key) ->
-	sulibarri_dht_node:delete(node(), Key).
+	gen_server:cast(?SERVER, {delete, Key}).
 
-output(Obj) ->
-	io:format("~n~p~n", [Obj]).
+%% ------------------------------------------------------------------
+%% gen_server Function Definitions
+%% ------------------------------------------------------------------
+
+init(Args) ->
+    {ok, Args}.
+
+handle_call(_Request, _From, State) ->
+    {reply, ok, State}.
+
+handle_cast(new_cluster, State) ->
+	sulibarri_dht_node:new_cluster(),
+    {noreply, State};
+
+handle_cast({join_cluster, Node}, State) ->
+	sulibarri_dht_node:join_cluster(Node),
+	{noreply, State};
+
+handle_cast({put, Key, Value}, State) ->
+	sulibarri_dht_node:put(Key, Value, node()),
+	{noreply, State};
+
+handle_cast({get, Key}, State) ->
+	sulibarri_dht_node:get(Key, node()),
+	{noreply, State};
+
+handle_cast({delete, Key}, State) ->
+	sulibarri_dht_node:delete(Key, node()),
+	{noreply, State};
+
+handle_cast({return, Data}, State) ->
+	io:format("Recieved ~p", [Data]),
+	{noreply, State}.
+
+handle_info(_Info, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%% ------------------------------------------------------------------
+%% Internal Function Definitions
+%% ------------------------------------------------------------------
 
 
 
