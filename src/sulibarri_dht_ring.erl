@@ -10,7 +10,8 @@
 		get_new_ring/3,
 		hash/1,
 		lookup/2,
-		get_transfers/3
+		get_transfers/3,
+		get_pref_list/3
 		]).
 
 hash(Key) ->
@@ -200,3 +201,35 @@ get_transfers(Old_Table, New_Table, Node) ->
 % 	Num_Nodes = length(get_distribution(Table)),
 
 % 	pref_list(CleanedWrappedTable, N_Val - 1, Num_Nodes)
+
+get_pref_list(Partition_Id, Table, N_Val) ->
+	{_ , {Owner, _}} = lists:keyfind(Partition_Id, 1, Table),
+	{H, T} = lists:splitwith(fun({N, _}) -> N =/= Partition_Id end, Table),
+	WrappedTable = T ++ H,
+	Nodes = lists:reverse(lists:foldl (
+			fun({_, {Node, _}}, Acc) ->
+				case (Node =/= Owner) and not(lists:member(Node, Acc)) of
+					true -> [Node | Acc];
+					_ -> Acc
+				end
+			end,
+			[],
+			WrappedTable
+		)
+	),
+	{Primaries, Secondaries} = prefs(Nodes, N_Val-1),
+	[{primaries, Primaries}, {secondaries, Secondaries}].
+
+
+	prefs(Nodes, N_Val) -> prefs(Nodes, N_Val, []).
+
+	prefs(Secondaries, 0, Primaries) -> {Primaries, Secondaries};
+	prefs([H|T], N_Val, Primaries) -> prefs(T, N_Val-1, [H | Primaries]).
+	
+
+	%% Tests %%
+
+	test_cluster() ->
+		T1 = get_new_ring([a,b,c], d, []),
+		T2 = get_new_ring([a,b,c,d], e, T1),
+		T2.

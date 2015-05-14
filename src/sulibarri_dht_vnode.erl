@@ -1,4 +1,4 @@
--module(sulibarri_dht_client).
+-module(sulibarri_dht_vnode).
 
 %%%-------------------------------------------
 %%% @author 
@@ -11,17 +11,14 @@
 
 -define(SERVER, ?MODULE).
 
+-record(state, {}).
+
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
 
 -export([
-        start_link/0,
-        new_cluster/0,
-        join_cluster/1,
-        put/2,
-        get/1,
-        delete/1
+        start_link/0
         ]).
 
 %% ------------------------------------------------------------------
@@ -38,21 +35,6 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-new_cluster() ->
-	gen_server:cast(?SERVER, new_cluster).
-
-join_cluster(Node) ->
-	gen_server:cast(?SERVER, {join_cluster, Node}).
-
-put(Key, Value) ->
-	gen_server:cast(?SERVER, {put, Key, Value}).
-
-get(Key) ->
-	gen_server:cast(?SERVER, {get, Key}).
-
-delete(Key) ->
-	gen_server:cast(?SERVER, {delete, Key}).
-
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -63,29 +45,8 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast(new_cluster, State) ->
-	sulibarri_dht_node:new_cluster(),
-    {noreply, State};
-
-handle_cast({join_cluster, Node}, State) ->
-	sulibarri_dht_node:join_cluster(Node),
-	{noreply, State};
-
-handle_cast({put, Key, Value}, State) ->
-	sulibarri_dht_node:put(Key, Value, node()),
-	{noreply, State};
-
-handle_cast({get, Key}, State) ->
-	sulibarri_dht_node:get(Key, node()),
-	{noreply, State};
-
-handle_cast({delete, Key}, State) ->
-	sulibarri_dht_node:delete(Key, node()),
-	{noreply, State};
-
-handle_cast({return, Data}, State) ->
-	io:format("Recieved ~p~n", [Data]),
-	{noreply, State}.
+handle_cast(_Msg, State) ->
+    {noreply, State}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -99,9 +60,4 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
-
-
-
-
-
 

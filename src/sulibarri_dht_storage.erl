@@ -103,7 +103,7 @@ handle_cast({init_transfer, Destination}, State) ->
 			gen_server:cast({sulibarri_dht_node, Destination},
 							{receive_transfer, P_Id, Data, node()})
 	end,
-	{noreply, ok};
+	{noreply, State};
 
 handle_cast({receive_transfer, Data, Sender}, State) ->
 	#state{partition_number = P_Id, ets_name = Ets_Name} = State,
