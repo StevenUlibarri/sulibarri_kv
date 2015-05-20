@@ -13,6 +13,7 @@ start() ->
 	application:start(sulibarri_dht).
 
 start(_StartType, _StartArgs) ->
+	filelib:ensure_dir("storage/" ++ atom_to_list(node()) ++ "/"),
     sulibarri_dht_sup:start_link().
 
 stop(_State) ->

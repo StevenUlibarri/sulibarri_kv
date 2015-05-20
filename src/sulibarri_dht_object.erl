@@ -14,18 +14,8 @@
 		 get_dot/2,
 		 merge_objects/2]).
 
--export_type([dht_object/0]).
-
+-include("dht_object.hrl").
 -type value() :: {sulibarri_dht_vclock:dot(), term()}.
-
--record(object, {
-	key :: term(),
-	values = [] :: [value()],
-	clock = [] :: sulibarri_dht_vclock:vclock(),
-	deleted = false :: boolean()
-	}).
-
--opaque dht_object() :: #object{}.
 
 new_object(Key, Value) ->
 	Obj = #object{key = Key, values = [{undefined,Value}]},

@@ -57,13 +57,13 @@ join_cluster(Node) ->
 
 init([]) ->
 	ets:new(?ETS, [named_table, protected]),
-	lists:foreach(
-		fun(P_Id) ->
-			{ok, Pid} = sulibarri_dht_storage:create(P_Id),
-			ets:insert(?ETS, {P_Id, Pid})
-		end,
-		lists:seq(1, ?DEFAULT_PARTITIONS)
-	),
+	% lists:foreach(
+	% 	fun(P_Id) ->
+	% 		{ok, Pid} = sulibarri_dht_storage:create(P_Id),
+	% 		ets:insert(?ETS, {P_Id, Pid})
+	% 	end,
+	% 	lists:seq(1, ?DEFAULT_PARTITIONS)
+	% ),
     {ok, []}.
 
 handle_call(_Request, _From, State) ->

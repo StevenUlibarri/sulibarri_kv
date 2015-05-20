@@ -189,19 +189,6 @@ get_transfers(Old_Table, New_Table, Node) ->
 	),
 	Transfers.
 
-% get_pref_list(Partition_Id, Table, N_Val) ->
-% 	{_ {Owner, _}} = lists:keyfind(Partition_Id, 1, Table),
-% 	{H, T} = lists:splitwith(fun({N, _}) -> N =:= Partition_Id end, Table),
-% 	WrappedTable = H ++ T,
-% 	CleanedWrappedTable = lists:dropwhile(
-% 		fun({_, {Node, _}}) -> Node =:=Owner end,
-% 		WrappedTable
-% 	),
-
-% 	Num_Nodes = length(get_distribution(Table)),
-
-% 	pref_list(CleanedWrappedTable, N_Val - 1, Num_Nodes)
-
 get_pref_list(Partition_Id, Table, N_Val) ->
 	{_ , {Owner, _}} = lists:keyfind(Partition_Id, 1, Table),
 	{H, T} = lists:splitwith(fun({N, _}) -> N =/= Partition_Id end, Table),

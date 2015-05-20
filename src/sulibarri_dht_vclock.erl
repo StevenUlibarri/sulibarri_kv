@@ -3,7 +3,8 @@
 -export([increment/2,
 		 descends/2,
 		 dominates/2,
-		 merge/2]).
+		 merge/2,
+		 equal/2]).
 
 -type dot() :: {term(), pos_integer()}.
 -type vclock() :: [dot()].
@@ -29,6 +30,9 @@ descends(Clock1, Clock2) ->
 			Count1 >= Count2 andalso
 			descends(Clock1, Rest2)
 	end.
+
+equal(Clock1, Clock2) ->
+	descends(Clock1, Clock2) andalso descends(Clock2, Clock1).
 
 dominates(Clock1, Clock2) ->
 	descends(Clock1, Clock2) andalso not descends(Clock2, Clock1).
