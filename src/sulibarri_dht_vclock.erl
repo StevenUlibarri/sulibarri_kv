@@ -18,7 +18,7 @@ increment(Clock, VNode_Id) ->
 		false -> [{VNode_Id, 1} | Clock];
 		{_ , Num} -> NewClock = lists:keyreplace(VNode_Id, 1, Clock,
 								{VNode_Id, Num + 1}),
-					sort(NewClock)
+		sort(NewClock)
 	end.
 
 descends(_, []) -> true;

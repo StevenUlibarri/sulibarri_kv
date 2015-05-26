@@ -15,7 +15,7 @@
 		 merge_objects/2]).
 
 -include("dht_object.hrl").
--type value() :: {sulibarri_dht_vclock:dot(), term()}.
+% -type value() :: {sulibarri_dht_vclock:dot(), term()}.
 
 new_object(Key, Value) ->
 	Obj = #object{key = Key, values = [{undefined,Value}]},

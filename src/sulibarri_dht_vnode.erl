@@ -8,9 +8,9 @@
 -compile([export_all]).
 
 -define(FILE_PATH(VnodeID),
-    "storage/" ++ atom_to_list(node()) ++ "/" ++ integer_to_list(VNodeId) ++ ".store").
+    "storage/" ++ atom_to_list(node()) ++ "/" ++ float_to_list(VNodeId) ++ ".store").
 -define(HINTED_FILE_PATH(VnodeID),
-    "storage/" ++ atom_to_list(node()) ++ "/hints_" ++ integer_to_list(VNodeId) ++ ".store").
+    "storage/" ++ atom_to_list(node()) ++ "/hints_" ++ float_to_list(VNodeId) ++ ".store").
 -define(DETS_ARGS, [{keypos, 2}]).
 
 -include("dht_object.hrl").
@@ -140,9 +140,11 @@ start_link(VNodeId) ->
 
 %% @private
 init([VNodeId]) ->
+    sulibarri_dht_vnode_router:register(VNodeId, self()),
     State = #state{vNodeId = VNodeId,
                     storage_file_path = ?FILE_PATH(VNodeId),
                     hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
+    lager:info("Vnode ~p active", [VNodeId]),
     {ok, active, State}.
 % active({replicate_put, Obj, Fsm_Sender}, State) ->
 %     ;

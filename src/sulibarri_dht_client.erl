@@ -17,7 +17,7 @@
 
 -export([
         start_link/0,
-        new_cluster/0,
+        new_cluster/1,
         join_cluster/1,
         put/2,
         get/1,
@@ -38,8 +38,8 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-new_cluster() ->
-	gen_server:cast(?SERVER, new_cluster).
+new_cluster(Nodes) ->
+	gen_server:cast(?SERVER, {new_cluster, Nodes}).
 
 join_cluster(Node) ->
 	gen_server:cast(?SERVER, {join_cluster, Node}).
@@ -63,8 +63,8 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast(new_cluster, State) ->
-	sulibarri_dht_node:new_cluster(),
+handle_cast({new_cluster, Nodes}, State) ->
+	sulibarri_dht_node:new_cluster(Nodes),
     {noreply, State};
 
 handle_cast({join_cluster, Node}, State) ->
