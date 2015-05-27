@@ -66,10 +66,12 @@ handle_cast({route, VNodeId, Op}, State) ->
 
 handle_cast({register, VNodeId, Pid}, State) ->
     ets:insert(?ROUTE_TABLE, {VNodeId, Pid}),
+    lager:info("vnode ~p registered", [VNodeId]),
     {noreply, State};
 
 handle_cast({degregister, VNodeId}, State) ->
     ets:delete(?ROUTE_TABLE, VNodeId),
+    lager:info("vnode ~p degregistered", [VNodeId]),
     {noreply, State}.
 
 handle_info(_Info, State) ->

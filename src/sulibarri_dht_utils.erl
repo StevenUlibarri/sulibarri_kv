@@ -1,7 +1,6 @@
 -module(sulibarri_dht_utils).
 -compile([export_all]).
 
-
 % Rounding
 
 floor(X) when X < 0 ->

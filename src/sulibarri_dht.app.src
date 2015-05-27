@@ -16,5 +16,7 @@
                   lager
                  ]},
   {mod, { sulibarri_dht_app, []}},
-  {env, []}
+  {env, [
+    % {lager, [{colored, true}]}
+  ]}
  ]}.

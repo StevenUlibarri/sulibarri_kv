@@ -24,10 +24,9 @@ start_link() ->
 
 init([]) ->
 	Children = [?CHILD(sulibarri_dht_vnode_sup, supervisor),
-				?CHILD(sulibarri_dht_node, worker),
 				?CHILD(sulibarri_dht_vnode_router, worker),
-				?CHILD(sulibarri_dht_ring_manager, worker),
-				?CHILD(sulibarri_dht_client, worker)],
+				?CHILD(sulibarri_dht_node, worker),
+				?CHILD(sulibarri_dht_ring_manager, worker)],
 
     {ok, { {one_for_one, 0, 1}, Children} }.
 

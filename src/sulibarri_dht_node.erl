@@ -10,7 +10,8 @@
 		put/3,
 		get/2,
 		delete/2,
-		new_cluster/1]).
+
+		new_cluster/2]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -37,8 +38,8 @@ get(Key, Origin) ->
 delete(Key, Origin) ->
 	gen_server:cast(?SERVER, {delete, Key, Origin}).
 
-new_cluster(Nodes) ->
-	gen_server:cast(?SERVER, {new_cluster, Nodes}).
+new_cluster(Nodes, Origin) ->
+	gen_server:cast(?SERVER, {new_cluster, Nodes, Origin}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -50,11 +51,16 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast({new_cluster, Nodes}, State) ->
+handle_cast({new_cluster, Nodes, Origin}, State) ->
 	case check_nodes(Nodes) of
-		{error, Reason} -> lager:info("New Cluster failed with: ~p", [Reason]);
+		{error, Unreachable_Nodes} -> 
+			Error = {error, [
+						{op, new_cluster},
+						{args, Nodes},
+						{reason, {unreachable, Unreachable_Nodes}}]},
+			sulibarri_dht_client:reply(Origin, Error);
 		ok ->
-			sulibarri_dht_ring_manager:new_cluster(Nodes)
+			sulibarri_dht_ring_manager:new_cluster(Nodes, Origin)
 	end,
 	{noreply, State};
 
@@ -65,7 +71,7 @@ handle_cast({init_cluster, VNodes}, State) ->
 			sulibarri_dht_vnode:create(VNodeId) end,
 		VNodes
 	),
-	lager:info("Vnodes Initialized"),
+	lager:info("~p Vnodes Initialized", [length(VNodes)]),
 	{noreply, State}.
 
 handle_info(_Info, State) ->
@@ -80,16 +86,20 @@ code_change(_OldVsn, State, _Extra) ->
 %% PRIVATE %%
 
 check_nodes(Nodes) ->
-	lists:foreach(
-		fun(Node) ->
+	Unreachable_Nodes = lists:foldl(
+		fun(Node, Acc) ->
 			case net_adm:ping(Node) of
-				pang -> {error, {Node, unreachable}};
-				pong -> ok
+				pang -> [Node | Acc];
+				pong -> Acc
 			end
 		end,
+		[],
 		Nodes
 	),
-	ok.
+	case length(Unreachable_Nodes) of
+		0 -> ok;
+		_ -> {error, Unreachable_Nodes}
+	end.
 
 % handle_cast({join_cluster, Node}, State) ->
 % 	sulibarri_dht_ring_manager:join_cluster(Node),

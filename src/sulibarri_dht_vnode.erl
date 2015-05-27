@@ -125,14 +125,15 @@ active({get, Key, Fsm_Sender}, State) ->
         Obj -> Obj
     end,
     reply(Fsm_Sender, Res),
-    {next_state, active, State}.
+    {next_state, active, State};
 
 % active({read_repair, Obj, Fsm_Sender}, State) ->
 %     ;
 % active({init_handoff, Destination}, State)->
 %     ok.
 
-
+active(stop, State) ->
+    {stop, normal, State}.
 
 %% init stuff
 start_link(VNodeId) ->
@@ -144,7 +145,7 @@ init([VNodeId]) ->
     State = #state{vNodeId = VNodeId,
                     storage_file_path = ?FILE_PATH(VNodeId),
                     hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
-    lager:info("Vnode ~p active", [VNodeId]),
+    % lager:info("Vnode ~p active", [VNodeId]),
     {ok, active, State}.
 % active({replicate_put, Obj, Fsm_Sender}, State) ->
 %     ;
@@ -173,7 +174,8 @@ handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
 %% @private
-terminate(_Reason, _StateName, _State) ->
+terminate(_Reason, _StateName, State) ->
+    sulibarri_dht_vnode_router:degregister(State#state.vNodeId),
     ok.
 
 %% @private
