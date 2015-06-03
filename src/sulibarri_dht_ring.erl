@@ -5,11 +5,20 @@
 -define(MAX_INDEX, (math:pow(2,160)-1)).
 -define(DEFAULT_PARTITIONS, 64).
 
--compile([export_all]).
+-export([hash/1,
+		  write_ring/2,
+		  read_ring/1,
+		  get_nodes/1,
+		  get_partition_table/1,
+		  get_claimant/1,
+		  new_ring/1,
+		  new_table/1,
+		  get_vnodes_for_node/2,
+		  get_replication_factors/1,
+		  get_pref_list/2
+		  ]).
 
 -include("ring_state.hrl").
-
--export([]).
 
 %% PUBLIC %%
 
@@ -26,6 +35,7 @@ read_ring(Path) ->
 	case file:read_file(Path) of
 		{ok, Ring_Bin} -> binary_to_term(Ring_Bin);
 		{error, enoent} -> not_found
+
 	end.
 
 get_nodes(Ring_State) ->
@@ -91,6 +101,14 @@ get_vnodes_for_node(Node, Ring_State) ->
 		Table
 	),
 	lists:reverse(VNodes).
+
+get_replication_factors(Ring_State) ->
+	Dist = get_distribution(Ring_State#ring_state.partition_table),
+	case length(Dist) of
+		1 -> {1,1,1};
+		2 -> {2,1,1};
+		_ -> {3,2,2}
+	end.
 
 %% PRIVATE %%
 
@@ -201,14 +219,6 @@ check_wrap(Window) ->
 		Window
 	),
 	lists:reverse(Checked).
-
-get_replication_factors(Table) ->
-	Dist = get_distribution(Table),
-	case length(Dist) of
-		1 -> {1,1,1};
-		2 -> {2,1,1};
-		_ -> {3,2,2}
-	end.
 
  %% REFACTOR %%
 

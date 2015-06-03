@@ -59,7 +59,12 @@ init([]) ->
         State -> ok
     end,
     VNodes = sulibarri_dht_ring:get_vnodes_for_node(node(), State),
-    gen_server:cast(sulibarri_dht_node, {init_cluster, VNodes}),
+    lists:foreach(
+        fun({_, VNode_Id}) ->
+            sulibarri_dht_vnode:create(VNode_Id)
+        end,
+        VNodes
+    ),
     {ok, State}.
 
 handle_cast(_Request, State) ->

@@ -23,58 +23,46 @@
 
 %% public stuff
 
-local_put(Pid, Obj, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {local_put, Obj, Fsm_Sender}).
+% local_put(Pid, Obj, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {local_put, Obj, Fsm_Sender}).
 
-replicate_put(Pid, Obj, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {replicate_put, Obj, Fsm_Sender}).
+% replicate_put(Pid, Obj, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {replicate_put, Obj, Fsm_Sender}).
 
-local_delete(Pid, Obj, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {local_delete, Obj, Fsm_Sender}).
+% local_delete(Pid, Obj, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {local_delete, Obj, Fsm_Sender}).
 
-replicate_delete(Pid, Obj, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {replicate_delete, Obj, Fsm_Sender}).
+% replicate_delete(Pid, Obj, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {replicate_delete, Obj, Fsm_Sender}).
 
-get(Pid, Key, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {get, Key, Fsm_Sender}).
+% get(Pid, Key, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {get, Key, Fsm_Sender}).
 
-read_repair(Pid, Obj, Fsm_Sender) ->
-    gen_fsm:send_event(Pid, {read_repair, Obj, Fsm_Sender}).
+% read_repair(Pid, Obj, Fsm_Sender) ->
+%     gen_fsm:send_event(Pid, {read_repair, Obj, Fsm_Sender}).
 
 % hinted_handoff(Pid, Obj, Fsm_Sender) ->
 %     ok. %%% TODO %%%%
 
-init_handoff(Pid, Destination) ->
-    gen_fsm:send_event(Pid, {init_handoff, Destination}).
+% init_handoff(Pid, Destination) ->
+%     gen_fsm:send_event(Pid, {init_handoff, Destination}).
 
 create(VNodeId) ->
     sulibarri_dht_vnode_sup:start_child(VNodeId).
 
-% active
-    % local put(Obj, fsm_sender) -> Obj(to replicate) + ack
-        %
-    % replicate put(Obj, fsm_sender) -> ack
-        %
-    % local delete(Obj, fsm_sender) -> ack
-        %
-    % replicate delete(Obj, fsm_sender) -> ack
-        %
-    % get(Key, fsm_sender) -> Obj/not_found
-        % get from dets
-    % read repair(Obj, fsm_sender) -> ack
-        %
-    % init handoff(Destination) -> ack
-        % spin up handoff fsm?
+start_link(VNodeId) ->
+    gen_fsm:start_link(?MODULE, [VNodeId], []).
 
-% handoff
-    % local put(Obj, fsm_sender) -> ack
-        % do local put + forward(that obj)
+%% @private
+init([VNodeId]) ->
+    sulibarri_dht_vnode_router:register(VNodeId, self()),
+    State = #state{vNodeId = VNodeId,
+                    storage_file_path = ?FILE_PATH(VNodeId),
+                    hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
+    % lager:info("Vnode ~p active", [VNodeId]),
+    {ok, active, State}.
 
-
-% forwarding
-
-%% state handlers
-
+%% Active
 active({local_put, Obj_Inc, Fsm_Sender}, State) ->
     Res = case get(Obj_Inc#object.key, State#state.storage_file_path) of
         {error, _} = Err -> Err;
@@ -135,18 +123,7 @@ active({get, Key, Fsm_Sender}, State) ->
 active(stop, State) ->
     {stop, normal, State}.
 
-%% init stuff
-start_link(VNodeId) ->
-    gen_fsm:start_link(?MODULE, [VNodeId], []).
 
-%% @private
-init([VNodeId]) ->
-    sulibarri_dht_vnode_router:register(VNodeId, self()),
-    State = #state{vNodeId = VNodeId,
-                    storage_file_path = ?FILE_PATH(VNodeId),
-                    hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
-    % lager:info("Vnode ~p active", [VNodeId]),
-    {ok, active, State}.
 % active({replicate_put, Obj, Fsm_Sender}, State) ->
 %     ;
 % active({local_delete, Obj, Fsm_Sender}, State) ->
@@ -202,7 +179,6 @@ put(Obj, File) ->
 
 reply(Fsm_Sender, Message) ->
     gen_fsm:send_event(Fsm_Sender, Message).
-    %Fsm_Sender ! Message.
 
 clock_ops(Inc, Local, Id) ->
     #object{clock = Clock_Inc} = Inc,
