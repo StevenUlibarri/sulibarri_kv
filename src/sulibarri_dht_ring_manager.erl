@@ -44,8 +44,6 @@ start_link() ->
 get_ring_state() ->
 	gen_server:call(?SERVER, get_state).
 
-
-
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -59,19 +57,21 @@ init([]) ->
         State -> ok
     end,
     VNodes = sulibarri_dht_ring:get_vnodes_for_node(node(), State),
-    lists:foreach(
-        fun({_, VNode_Id}) ->
-            sulibarri_dht_vnode:create(VNode_Id)
+    Ids = lists:foldl(
+        fun({_, VNode_Id, _}, Acc) ->
+            [VNode_Id | Acc]
         end,
+        [],
         VNodes
     ),
+    sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
     {ok, State}.
+
+handle_call(get_state, _From, State) ->
+    {reply, State, State}.
 
 handle_cast(_Request, State) ->
     {noreply, State}.
-
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
 
 handle_info(_Info, State) ->
     {noreply, State}.

@@ -62,6 +62,10 @@ handle_cast({new_cluster, Nodes, Origin}, State) ->
 		ok ->
 			sulibarri_dht_ring_manager:new_cluster(Nodes, Origin)
 	end,
+	{noreply, State};
+
+handle_cast({put, Obj, Origin}, State) ->
+	sulibarri_dht_put_fsm:create(Obj, Origin),
 	{noreply, State}.
 
 % handle_cast({init_cluster, VNodes}, State) ->

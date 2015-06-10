@@ -36,7 +36,8 @@ start_child(Obj, Origin) ->
 
 init([]) ->
 
-	Put_Fsm = ?CHILD(sulibarri_dht_put_fsm, worker),
+	Put_Fsm = {sulibarri_dht_put_fsm, {sulibarri_dht_put_fsm, start_link, []},
+				temporary, 5000, worker, [sulibarri_dht_put_fsm]},
 
     {ok, { {simple_one_for_one, 5, 10}, [Put_Fsm]} }.
 

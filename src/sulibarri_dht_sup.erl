@@ -24,7 +24,7 @@ start_link() ->
 
 init([]) ->
 
-	Supervisors = [sulibarri],
+	%Supervisors = [sulibarri],
 
 
 	Children = [?CHILD(sulibarri_dht_vnode_sup, supervisor),

@@ -6,10 +6,10 @@
 		 merge/2,
 		 equal/2]).
 
--type dot() :: {term(), pos_integer()}.
--type vclock() :: [dot()].
+% -type dot() :: {term(), pos_integer()}.
+% -type vclock() :: [dot()].
 
--export_type([dot/0, vclock/0]).
+% -export_type([dot/0, vclock/0]).
 
 increment([], VNode_Id) ->
 	[{VNode_Id, 1}];

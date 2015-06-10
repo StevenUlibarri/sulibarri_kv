@@ -3,7 +3,7 @@
 % debug_info]).
 
 -define(MAX_INDEX, (math:pow(2,160)-1)).
--define(DEFAULT_PARTITIONS, 64).
+-define(DEFAULT_PARTITIONS, 32).
 
 -export([hash/1,
 		  write_ring/2,
@@ -15,10 +15,16 @@
 		  new_table/1,
 		  get_vnodes_for_node/2,
 		  get_replication_factors/1,
-		  get_pref_list/2
+		  get_pref_list/2,
+		  primaries/1,
+		  secondaries/1,
+		  vnode_belongs_to/3
 		  ]).
 
--include("ring_state.hrl").
+-record(ring_state, {partition_table,
+				claimant,
+				nodes,
+                vclock}).
 
 %% PUBLIC %%
 
@@ -75,23 +81,55 @@ new_table(Node_List) ->
 		end.
 
 new_table([Current_Index|Rest_Idx], [Current_Node|Rest_Nodes], Nodes, Acc) ->
-	Entry = {Current_Node, (?MAX_INDEX / ?DEFAULT_PARTITIONS) * Current_Index},
+	Entry = {Current_Node, Current_Index, (?MAX_INDEX / ?DEFAULT_PARTITIONS) * Current_Index},
 	new_table(Rest_Idx, Rest_Nodes, Nodes, [Entry|Acc]);
 new_table([], _, _, Acc) -> Acc;
 new_table(Idxs, [], Nodes, Acc) -> new_table(Idxs, Nodes, Nodes, Acc).
 
-get_pref_list(Key, Table) ->
-	{_, Primary_Id} = lookup(Key, Table),
-	{H, T} = lists:splitwith(fun({_, Id}) -> Id =/= Primary_Id end, Table),
+get_pref_list(Key, Ring_State) ->
+	Table = Ring_State#ring_state.partition_table,
+	{_, Primary_Id, _} = lookup(Key, Table),
+	{H, T} = lists:splitwith(fun({_, Id, _}) -> Id =/= Primary_Id end, Table),
 	Wrapped_List = T ++ H,
 	{Remaining_Vnodes, Primaries} = get_primaries(Wrapped_List),
 	Secondaries = get_secondaries(Remaining_Vnodes),
-	{Primaries, Secondaries}.
+	Pref_List = Primaries ++ Secondaries,
+	Pref_List.
+	% prune_pref_list(Pref_List).
+
+% get_subbed_pref_list(Pref_List, N) ->
+
+
+primaries(Pref_List) ->
+	Primaries = lists:foldl(
+		fun({Entry, Role}, Acc) ->
+			case Role of
+				primary -> [Entry | Acc];
+				_ -> Acc
+			end
+		end,
+		[],
+		Pref_List
+	),
+	lists:reverse(Primaries).
+
+secondaries(Pref_List) ->
+	Secondaries = lists:foldl(
+		fun({Entry, Role}, Acc) ->
+			case Role of
+				secondary -> [Entry | Acc];
+				_ -> Acc
+			end
+		end,
+		[],
+		Pref_List
+	),
+	lists:reverse(Secondaries).
 
 get_vnodes_for_node(Node, Ring_State) ->
 	Table = Ring_State#ring_state.partition_table,
 	VNodes = lists:foldl(
-		fun(Entry = {N, _}, Acc) ->
+		fun(Entry = {N,_, _}, Acc) ->
 			case N =:= Node of
 				true -> [Entry | Acc];
 				false -> Acc
@@ -102,8 +140,12 @@ get_vnodes_for_node(Node, Ring_State) ->
 	),
 	lists:reverse(VNodes).
 
-get_replication_factors(Ring_State) ->
-	Dist = get_distribution(Ring_State#ring_state.partition_table),
+vnode_belongs_to(Node, VNodeId, Ring_State) ->
+	Entries = get_vnodes_for_node(Node, Ring_State),
+	lists:any(fun({_, Id, _}) -> Id =:= VNodeId end, Entries).
+
+get_replication_factors(Table) ->
+	Dist = get_distribution(Table),
 	case length(Dist) of
 		1 -> {1,1,1};
 		2 -> {2,1,1};
@@ -112,23 +154,36 @@ get_replication_factors(Ring_State) ->
 
 %% PRIVATE %%
 
+prune_pref_list(List) ->
+	Pruned = lists:foldl(
+		fun({{Node, _}, _} = Entry, Acc) ->
+			case net_adm:ping(Node) of
+				pang -> Acc;
+				pong -> [Entry | Acc]
+			end
+		end,
+		[],
+		List
+	),
+	lists:reverse(Pruned).
+
 check_replace(Indexes, Table) ->
 	lists:foldl(
 		fun(Idx, Current_Table) ->
 			% get entry at idx,
-			Entry = lists:nth(Idx, Table),
+			{Node, _, _} = Entry = lists:nth(Idx, Table),
 			% get neighbors for entry,
-			Neighbors = get_neighbors(Idx, Table),
+			Neighbors = get_neighbors(Idx, Current_Table),
 			% check if it fits,
-			case can_fit(Entry, Neighbors) of
+			case can_fit(Node, Neighbors) of
 				% if not get suitable replacement from Distribution
 				true -> Current_Table;
 				false -> 
 					Distribution = get_distribution(Current_Table),
-					{Node, _} = simple_replace(Distribution, Neighbors),
-					{_, VNodeId} = Entry,
+					{Replace_Node, _} = simple_replace(Distribution, Neighbors),
+					{_, VNodeId, Hash} = Entry,
 					lists:sublist(Current_Table, Idx-1) ++
-							[{Node, VNodeId}] ++ lists:nthtail(Idx, Current_Table)
+							[{Replace_Node, VNodeId, Hash}] ++ lists:nthtail(Idx, Current_Table)
 			end
 		end,
 		Table,
@@ -136,7 +191,8 @@ check_replace(Indexes, Table) ->
 	).
 
 simple_replace([H|T], Neighbors) ->
-	case can_fit(H, Neighbors) of
+	{Node, _} = H,
+	case can_fit(Node, Neighbors) of
 		true -> H;
 		false -> simple_replace(T, Neighbors)
 	end.
@@ -157,14 +213,14 @@ get_neighbors(Idx, Table) ->
 		)
 	).
 
-can_fit(Entry, Neighbors) ->
-	{Node, _} = Entry,
+can_fit(Node, Neighbors) ->
+	% {Node, _} = Entry,
 	not lists:keymember(Node, 1, Neighbors).
 
 get_distribution(Table) ->
 	Dist = lists:foldl(
 		fun(Entry, Acc) ->
-			{Node, _} = Entry,
+			{Node,_, _} = Entry,
 			case lists:keyfind(Node, 1, Acc) of
 				false -> [{Node, 1} | Acc];
 				{_, Count} -> lists:keyreplace(Node, 1, Acc, {Node, Count + 1})
@@ -174,31 +230,31 @@ get_distribution(Table) ->
 		Table),
 	lists:keysort(1, Dist).
 
-get_primaries(Table) -> 
+get_primaries(Table) ->
 	{N, _, _} = get_replication_factors(Table),
 	get_primaries(Table, N, []).
 get_primaries(Table, N_Val, Primaries) ->
 	case length(Primaries) of
 		N_Val -> {Table, lists:reverse(Primaries)};
 		_ ->
-			Next_Primary = {P_Owner, _} = lists:nth(1, Table),
-			New_Table = lists:filter(fun({Node, _}) -> Node =/= P_Owner end,Table),
-			get_primaries(New_Table, N_Val, [Next_Primary | Primaries])
+			Next_Primary = {P_Owner,_, _} = lists:nth(1, Table),
+			New_Table = lists:filter(fun({Node,_, _}) -> Node =/= P_Owner end,Table),
+			get_primaries(New_Table, N_Val, [{Next_Primary, primary} | Primaries])
 	end.
 
 get_secondaries(Table) -> get_secondaries(Table, []).
 get_secondaries([], Secondaries) -> lists:reverse(Secondaries);
 get_secondaries(Table, Secondaries)->
-	Next_Secondary = {S_Owner, _} = lists:nth(1, Table),
-	New_Table = lists:filter(fun({Node, _}) -> Node =/= S_Owner end, Table),
-	get_secondaries(New_Table, [Next_Secondary | Secondaries]).
+	Next_Secondary = {S_Owner,_, _} = lists:nth(1, Table),
+	New_Table = lists:filter(fun({Node,_, _}) -> Node =/= S_Owner end, Table),
+	get_secondaries(New_Table, [{Next_Secondary, secondary} | Secondaries]).
 	
 lookup(Key, Table) ->
 	Hash = hash(Key),
 	% Hash = Key,
 	lookup_node(Hash, Table).
 lookup_node(Hash, [H|T]) ->
-	{_, Top} = H,
+	{_, _, Top} = H,
 	case Top >= Hash of
 		true -> H;
 		false -> lookup_node(Hash, T)

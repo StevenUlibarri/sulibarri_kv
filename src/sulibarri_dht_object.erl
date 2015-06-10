@@ -5,7 +5,9 @@
 		 get_dots/1,
 		 get_dotted_values/1,
 		 set_value/3,
+		 set_value/2,
 		 add_value/3,
+		 add_value/2,
 		 get_clock/1,
 		 increment_clock/2,
 		 get_key/1,
@@ -37,6 +39,13 @@ get_dotted_values(Obj) ->
 set_value(Obj, Value, Dot) ->
 	Obj#object{values = [{Dot, Value}]}.
 
+set_value(Obj, Value) ->
+	Obj#object{values = [{undefined, Value}]}.
+
+add_value(Obj, Value) ->
+	#object{values = Values} = Obj,
+	Obj#object{values = sort_values([Value | Values])}.
+
 add_value(Obj, Value, Dot) ->
 	#object{values = Values} = Obj,
 	Obj#object{values = sort_values([{Dot, Value} | Values])}.
@@ -57,15 +66,18 @@ get_deleted(Obj) ->
 set_deleted(Obj, Bool) ->
 	Obj#object{deleted = Bool}.
 
+get_dot(Clock, VNode_Id) when is_list(Clock) ->
+	lists:keyfind(VNode_Id, 1, Clock);
+
 get_dot(Obj, VNode_Id) ->
 	lists:keyfind(VNode_Id, 1, Obj#object.clock).
 
 merge_objects(Obj_Local, Obj_Incoming) ->
 	New_Clock = sulibarri_dht_vclock:merge(
-			sulibarri_dht_object:get_clock(Obj_Local),
-			sulibarri_dht_object:get_clock(Obj_Incoming)),
-	New_Values = merge_values(sulibarri_dht_object:get_values(Obj_Local),
-			sulibarri_dht_object:get_values(Obj_Incoming)),
+			get_clock(Obj_Local),
+			get_clock(Obj_Incoming)),
+	New_Values = merge_values(get_values(Obj_Local),
+			get_values(Obj_Incoming)),
 	Obj_Local#object{clock = New_Clock, values = New_Values}.
 
 % @private

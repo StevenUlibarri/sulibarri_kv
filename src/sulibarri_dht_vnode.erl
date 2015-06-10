@@ -5,12 +5,10 @@
 -behaviour(gen_fsm).
 -export([init/1, handle_info/3, terminate/3, code_change/4, handle_event/3, handle_sync_event/4]).
 
--compile([export_all]).
-
 -define(FILE_PATH(VnodeID),
-    "storage/" ++ atom_to_list(node()) ++ "/" ++ float_to_list(VNodeId) ++ ".store").
--define(HINTED_FILE_PATH(VnodeID),
-    "storage/" ++ atom_to_list(node()) ++ "/hints_" ++ float_to_list(VNodeId) ++ ".store").
+    "storage/" ++ atom_to_list(node()) ++ "/" ++ integer_to_list(VNodeId) ++ ".store").
+% -define(HINTED_FILE_PATH(VnodeID),
+%     "storage/" ++ atom_to_list(node()) ++ "/hints_" ++ integer_to_list(VNodeId) ++ ".store").
 -define(DETS_ARGS, [{keypos, 2}]).
 
 -include("dht_object.hrl").
@@ -18,47 +16,21 @@
 
 -record(state, {vNodeId,
                 storage_file_path,
-                hinted_file_path,
+                % hinted_file_path,
                 forward_node}).
 
-%% public stuff
-
-% local_put(Pid, Obj, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {local_put, Obj, Fsm_Sender}).
-
-% replicate_put(Pid, Obj, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {replicate_put, Obj, Fsm_Sender}).
-
-% local_delete(Pid, Obj, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {local_delete, Obj, Fsm_Sender}).
-
-% replicate_delete(Pid, Obj, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {replicate_delete, Obj, Fsm_Sender}).
-
-% get(Pid, Key, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {get, Key, Fsm_Sender}).
-
-% read_repair(Pid, Obj, Fsm_Sender) ->
-%     gen_fsm:send_event(Pid, {read_repair, Obj, Fsm_Sender}).
-
-% hinted_handoff(Pid, Obj, Fsm_Sender) ->
-%     ok. %%% TODO %%%%
-
-% init_handoff(Pid, Destination) ->
-%     gen_fsm:send_event(Pid, {init_handoff, Destination}).
-
-create(VNodeId) ->
-    sulibarri_dht_vnode_sup:start_child(VNodeId).
+% create(VNodeId) ->
+%     sulibarri_dht_vnode_sup:start_child(VNodeId).
 
 start_link(VNodeId) ->
     gen_fsm:start_link(?MODULE, [VNodeId], []).
 
 %% @private
 init([VNodeId]) ->
-    sulibarri_dht_vnode_router:register(VNodeId, self()),
+    % sulibarri_dht_vnode_router:register(VNodeId, self()),
     State = #state{vNodeId = VNodeId,
-                    storage_file_path = ?FILE_PATH(VNodeId),
-                    hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
+                    storage_file_path = ?FILE_PATH(VNodeId)},
+                    % hinted_file_path = ?HINTED_FILE_PATH(VNodeId)},
     % lager:info("Vnode ~p active", [VNodeId]),
     {ok, active, State}.
 
@@ -72,13 +44,14 @@ active({local_put, Obj_Inc, Fsm_Sender}, State) ->
                 ok -> New_Obj;
                 Err -> Err
             end;
-        Obj_Local ->
-            New_Obj = clock_ops(Obj_Inc, Obj_Local),
+        [Obj_Local] ->
+            New_Obj = clock_ops(Obj_Inc, Obj_Local, State#state.vNodeId),
             case ?MODULE:put(New_Obj, State#state.storage_file_path) of
                 ok -> New_Obj;
                 Err -> Err
             end
     end,
+    % lager:info("~p", [lager:pr(Res, sulibarri_dht_object)]),
     reply(Fsm_Sender, Res),
     {next_state, active, State};
    
@@ -181,8 +154,8 @@ reply(Fsm_Sender, Message) ->
     gen_fsm:send_event(Fsm_Sender, Message).
 
 clock_ops(Inc, Local, Id) ->
-    #object{clock = Clock_Inc} = Inc,
-    #object{clock = Clock_Local} = Local,
+    Clock_Inc = sulibarri_dht_object:get_clock(Inc),
+    Clock_Local = sulibarri_dht_object:get_clock(Local),
 
     case sulibarri_dht_vclock:descends(Clock_Inc, Clock_Local) of
         true ->
@@ -193,14 +166,17 @@ clock_ops(Inc, Local, Id) ->
             New_Obj2;
         false ->
             Merged_Clock = sulibarri_dht_vclock:merge(Clock_Inc, Clock_Local),
-            New_Obj1 = Inc#object{clock = Merged_Clock},
-            New_Obj2 = sulibarri_dht_object:increment_clock(New_Obj1, Id),
-            [Val] = sulibarri_dht_object:get_values(New_Obj2),
-            Dot = sulibarri_dht_object:get_dot(New_Obj2, Id),
-            New_Obj3 = sulibarri_dht_object:add_value(New_Obj2, Val, Dot),
-            New_Obj3
+            Incremented_Clock = sulibarri_dht_vclock:increment(Merged_Clock, Id),
+            [New_Val] = sulibarri_dht_object:get_values(Inc),
+            Dot = sulibarri_dht_object:get_dot(Incremented_Clock, Id),
+            Dotted_Inc_Value = {Dot, New_Val},
+
+            New_Obj1 = Local#object{clock = Incremented_Clock},
+            New_Obj2 = sulibarri_dht_object:add_value(New_Obj1, Dotted_Inc_Value),
+            New_Obj2
     end.
 
+%% @private
 clock_ops(Inc, Id) ->
     New_Obj1 = sulibarri_dht_object:increment_clock(Inc, Id),
     [Val] = sulibarri_dht_object:get_values(New_Obj1),
