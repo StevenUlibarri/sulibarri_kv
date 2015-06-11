@@ -66,7 +66,8 @@ init([]) ->
             Ids = get_Vnode_Ids(Ring),
             Nodes = sulibarri_dht_ring:get_nodes(Ring),
             sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
-            sulibarri_dht_node_watcher:node_up(node(), Nodes)
+            sulibarri_dht_node_watcher:node_up(node(), Nodes),
+            sulibarri_dht_node_watcher:start_monitor(Nodes)
     end,
     {ok, Ring}.
 
@@ -89,6 +90,8 @@ handle_cast({new_ring, Ring}, _State) ->
     sulibarri_dht_ring:write_ring(?RING_PATH, Ring),
     Ids = get_Vnode_Ids(Ring),
     sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
+    Nodes = sulibarri_dht_ring:get_nodes(Ring),
+    sulibarri_dht_node_watcher:start_monitor(Nodes),
     {noreply, Ring}.
 
 handle_info(_Info, State) ->

@@ -16,7 +16,8 @@
 
 -export([
         start_link/0,
-        node_up/2
+        node_up/2,
+        start_monitor/1
         ]).
 
 %% ------------------------------------------------------------------
@@ -37,6 +38,9 @@ node_up(Node, Nodes) ->
 	% Nodes = sulibarri_dht_ring_manager:get_nodes(),
 	gen_server:abcast(Nodes -- [node()], ?SERVER, {node_up, Node}).
 
+start_monitor(Nodes) ->
+    gen_server:cast(?SERVER, {start_monitor, Nodes}).
+
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -52,11 +56,44 @@ handle_cast({node_up, Node}, State) ->
 	sulibarri_dht_vnode_router:check_handoff_for_node(Node),
 	{noreply, State};
 
+handle_cast({start_monitor, Nodes}, _State) ->
+    lager:notice("Node Monitor Started"),
+    Watch_List = lists:foldl(
+        fun(Node, Acc) ->
+            case net_adm:ping(Node) of
+                pong -> 
+                    sulibarri_dht_vnode_router:check_handoff_for_node(Node),
+                    [{Node, pong} | Acc];
+                pang -> [{Node, pang} | Acc]
+            end
+        end,
+        [],
+        Nodes
+    ),
+    erlang:send_after(1000, self(), check),
+    {noreply, Watch_List};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(_Info, State) ->
-    {noreply, State}.
+handle_info(check, Watch_List) ->
+    Updated_Watch_List = lists:foldl(
+        fun({Node, Status}, Acc) ->
+            case net_adm:ping(Node) of
+                pong when Status =:= pang ->
+                    gen_server:cast(?SERVER, {node_up, Node}),
+                    [{Node, pong} | Acc];
+                pang when Status =:= pong ->
+                    [{Node, pang} | Acc];
+                _ ->
+                    [{Node, Status}| Acc]
+            end
+        end,
+        [],
+        Watch_List
+    ),
+    erlang:send_after(3000, self(), check),
+    {noreply, Updated_Watch_List}.
 
 terminate(_Reason, _State) ->
     ok.
