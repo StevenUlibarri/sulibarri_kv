@@ -19,6 +19,7 @@
 -export([
         start_link/0,
         route/3,
+        route_get/3,
         start_vnode/1,
         degregister/1,
         check_handoff_for_node/1,
@@ -40,6 +41,9 @@ start_link() ->
 
 route(Node, VNodeId, Op) ->
     gen_server:cast({?MODULE, Node}, {route, VNodeId, Op}).
+
+route_get(Node, VNodeId, Op) ->
+    gen_server:cast({?MODULE, Node}, {route_get, VNodeId, Op}).
 
 start_vnode(VNodeIds) ->
     gen_server:cast(?MODULE, {start_vnode, VNodeIds}).
@@ -96,6 +100,26 @@ handle_cast({route, VNodeId, Op}, State) ->
                     start_vnodes([VNodeId], ?HINTED_TABLE),
                     [{_, Pid}] = ets:lookup(?HINTED_TABLE, VNodeId),
                     gen_fsm:send_event(Pid, Op);
+                [{_, Pid}] ->
+                    gen_fsm:send_event(Pid, Op)
+            end
+    end,
+    {noreply, State};
+
+handle_cast({route_get, VNodeId, Op}, State) ->
+    Ring_State = sulibarri_dht_ring_manager:get_ring_state(),
+    case sulibarri_dht_ring:vnode_belongs_to(node(), VNodeId, Ring_State) of
+        true ->
+            [{_,Pid}] = ets:lookup(?ROUTE_TABLE, VNodeId),
+            gen_fsm:send_event(Pid, Op);
+        false ->
+            case ets:lookup(?HINTED_TABLE, VNodeId) of
+                [] ->
+                    % start_vnodes([VNodeId], ?HINTED_TABLE),
+                    % [{_, Pid}] = ets:lookup(?HINTED_TABLE, VNodeId),
+                    % gen_fsm:send_event(Pid, Op);
+                    {_,_,Fsm_Sender} = Op,
+                    gen_fsm:send_event(Fsm_Sender, not_found);
                 [{_, Pid}] ->
                     gen_fsm:send_event(Pid, Op)
             end

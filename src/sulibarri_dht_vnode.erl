@@ -117,9 +117,9 @@ active({get, Key, Fsm_Sender}, State) ->
     Res = case get(Key, State#state.storage_file_path) of
         {error, _} = Err -> Err;
         [] -> not_found;
-        Obj -> Obj
+        [Obj] -> Obj
     end,
-    reply(Fsm_Sender, Res),
+    reply(Fsm_Sender, {Res, {node(), State#state.vNodeId}}),
     {next_state, active, State};
 
 % active({read_repair, Obj, Fsm_Sender}, State) ->
@@ -191,7 +191,11 @@ clean(Path) ->
 %     ok.
 
 reply(Fsm_Sender, Message) ->
-    gen_fsm:send_event(Fsm_Sender, Message).
+    case Fsm_Sender of
+        undefined -> ok;
+        _ ->
+            gen_fsm:send_event(Fsm_Sender, Message)
+    end.
 
 clock_ops(Inc, Local, Id) ->
     Clock_Inc = sulibarri_dht_object:get_clock(Inc),

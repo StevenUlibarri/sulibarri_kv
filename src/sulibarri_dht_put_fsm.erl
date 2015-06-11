@@ -14,7 +14,7 @@
 -record(state, {
 		origin,
 		inc_object,
-		n, w, r,
+		n, w,
 		pref_list = [],
 		frontier_obj,
 		acks = 0
@@ -39,10 +39,10 @@ prepare(timeout, State = #state{inc_object = Obj,
 
 	Ring = sulibarri_dht_ring_manager:get_ring_state(),
 	Table = sulibarri_dht_ring:get_partition_table(Ring),
-	{N, W, R} = sulibarri_dht_ring:get_replication_factors(Table),
+	{N, W, _} = sulibarri_dht_ring:get_replication_factors(Table),
 	Obj_Key = sulibarri_dht_object:get_key(Obj),
 	Pref_List = sulibarri_dht_ring:get_subbed_pref_list(Obj_Key, Ring),
-	New_State = State#state{n = N, w = W, r = R,
+	New_State = State#state{n = N, w = W,
 							pref_list = Pref_List},
 
 	Up_Primaries = sulibarri_dht_ring:filtered_primaries(Obj_Key,Ring),
@@ -122,7 +122,6 @@ case New_State#state.acks of
 			{stop, normal, New_State};
 		_ -> {next_state, waiting_remote, New_State}
 end.
-
 
 %% @private
 handle_event(_Event, StateName, State) ->

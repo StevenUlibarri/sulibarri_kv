@@ -62,6 +62,10 @@ handle_cast({new_cluster, Nodes}, State) ->
 
 handle_cast({put, Obj, Origin}, State) ->
 	sulibarri_dht_put_fsm:create(Obj, Origin),
+	{noreply, State};
+
+handle_cast({get, Key, Origin}, State) ->
+	sulibarri_dht_get_fsm:create(Key, Origin),
 	{noreply, State}.
 
 % handle_cast({init_cluster, VNodes}, State) ->
