@@ -21,6 +21,7 @@
         route/3,
         start_vnode/1,
         degregister/1,
+        check_handoff_for_node/1,
         get_routes/0]).
 
 %% ------------------------------------------------------------------
@@ -45,6 +46,9 @@ start_vnode(VNodeIds) ->
 
 % register(VNodeId, Pid) ->
 %     gen_server:cast(?MODULE, {register, VNodeId, Pid}).
+
+check_handoff_for_node(Node) ->
+    gen_server:cast(?MODULE, {check_handoff, Node}).
 
 degregister(VNodeId) ->
     gen_server:cast(?MODULE, {degregister, VNodeId}).
@@ -86,6 +90,7 @@ handle_cast({route, VNodeId, Op}, State) ->
             [{_,Pid}] = ets:lookup(?ROUTE_TABLE, VNodeId),
             gen_fsm:send_event(Pid, Op);
         false ->
+            lager:warning("Handoff Triggered"),
             case ets:lookup(?HINTED_TABLE, VNodeId) of
                 [] ->
                     start_vnodes([VNodeId], ?HINTED_TABLE),
@@ -113,6 +118,28 @@ handle_cast({degregister, VNodeId}, State) ->
             deregister_vnode(VNodeId, ?HINTED_TABLE),
             maybe_persist_handoffs(?HINTED_TABLE)
     end,
+    {noreply, State};
+
+handle_cast({check_handoff, Node}, State) ->
+    Ring = sulibarri_dht_ring_manager:get_ring_state(),
+    Handoffs = ets:tab2list(?HINTED_TABLE),
+    Handoff_For_Node = lists:foldl(
+        fun({Id, _} = Entry, Acc) ->
+            case sulibarri_dht_ring:vnode_belongs_to(Node, Id, Ring) of
+                true -> [Entry | Acc];
+                false -> Acc
+            end
+        end,
+        [],
+        Handoffs
+    ),
+
+    lists:foreach(
+        fun({_, Pid}) ->
+            gen_fsm:send_event(Pid, {handoff, Node})
+        end,
+        Handoff_For_Node
+    ),
     {noreply, State}.
 
 handle_info(_Info, State) ->

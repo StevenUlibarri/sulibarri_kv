@@ -11,7 +11,7 @@
 		get/2,
 		delete/2,
 
-		new_cluster/2]).
+		new_cluster/1]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -38,8 +38,8 @@ get(Key, Origin) ->
 delete(Key, Origin) ->
 	gen_server:cast(?SERVER, {delete, Key, Origin}).
 
-new_cluster(Nodes, Origin) ->
-	gen_server:cast(?SERVER, {new_cluster, Nodes, Origin}).
+new_cluster(Nodes) ->
+	gen_server:cast(?SERVER, {new_cluster, Nodes}).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -51,16 +51,12 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast({new_cluster, Nodes, Origin}, State) ->
+handle_cast({new_cluster, Nodes}, State) ->
 	case check_nodes(Nodes) of
 		{error, Unreachable_Nodes} -> 
-			Error = {error, [
-						{op, new_cluster},
-						{args, Nodes},
-						{reason, {unreachable, Unreachable_Nodes}}]},
-			sulibarri_dht_client:reply(Origin, Error);
+			lager:error("Nodes, Unreachable: ~p", [Unreachable_Nodes]);
 		ok ->
-			sulibarri_dht_ring_manager:new_cluster(Nodes, Origin)
+			sulibarri_dht_ring_manager:new_cluster(Nodes)
 	end,
 	{noreply, State};
 

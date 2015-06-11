@@ -41,26 +41,26 @@ prepare(timeout, State = #state{inc_object = Obj,
 	Table = sulibarri_dht_ring:get_partition_table(Ring),
 	{N, W, R} = sulibarri_dht_ring:get_replication_factors(Table),
 	Obj_Key = sulibarri_dht_object:get_key(Obj),
-	Pref_List = sulibarri_dht_ring:get_pref_list(Obj_Key, Ring),
-	io:format("~p~n", [Pref_List]),
+	Pref_List = sulibarri_dht_ring:get_subbed_pref_list(Obj_Key, Ring),
 	New_State = State#state{n = N, w = W, r = R,
 							pref_list = Pref_List},
 
-	LocalPrimary = [Coord || {{Node,_, _}, Role} = Coord <- Pref_List, Node =:= node(), Role =:= primary],
+	Up_Primaries = sulibarri_dht_ring:filtered_primaries(Obj_Key,Ring),
 
-	case {Pref_List, LocalPrimary =:= []} of
+	%% am I a primary?
+	LocalPrimary = [Coord || {Node, _} = Coord <- Up_Primaries, Node =:= node()],
+
+	case {Up_Primaries, LocalPrimary =:= []} of
 		{[], _} ->
-			% all primaries down coord from here
+			%all primaries down Coord From here
 			{next_state, validate, New_State, 0};
 		{_, true} ->
-			% node is not a primary, forward to random primary
-			Primaries = sulibarri_dht_ring:primaries(Pref_List),
-			Random_Primary = lists:nth(random:uniform(length(Primaries)), Primaries),
-			supervisor:start_child({sulibarri_dht_put_fsm_sup, Random_Primary},
-									[Obj, Origin]),
+			%I am not a primary, forward to random primary
+			Random_Primary = lists:nth(random:uniform(length(Up_Primaries)), Up_Primaries),
+			supervisor:start_child({sulibarri_dht_put_fsm, Random_Primary}, [Obj, Origin]),
 			{stop, normal, New_State};
 		_ ->
-			%node is primary, can coord
+			%I am a primary, I can coord
 			{next_state, validate, New_State, 0}
 	end.
 
@@ -85,7 +85,8 @@ validate(timeout, State = #state{w = W,
 	
 execute_local(timeout, State = #state{pref_list = Pref_List,
 									  inc_object = Obj}) ->
-	{{Node, Id, _}, _} = hd(Pref_List), %%%% CHECK HANDOFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	{Node, Id} = lists:keyfind(node(), 1, Pref_List),
+	% {{Node, Id, _}, _} = hd(Pref_List), %%%% CHECK HANDOFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	sulibarri_dht_vnode_router:route(Node, Id, {local_put, Obj, self()}),
 	{next_state, waiting_local, State}.
 
@@ -101,15 +102,26 @@ waiting_local(Result, State = #state{origin  = Origin, acks = Acks, w = W}) ->
 		_ -> {next_state, execute_remote, New_State, 0}
 	end.
 
-% execute_remote(timeout, State = #state{n = N, w = W,
-% 									   pref_list = Pref_List,
-% 									   frontier_obj = Frontier_Obj}) ->
-% Targets0 = lists:sublist(N, Pref_List),
-% Targets1 - lists:filter(fun({{Node, _}, _}) -> Node =/= node() end, Targets0),
+execute_remote(timeout, State = #state{pref_list = Pref_List,
+									   frontier_obj = Frontier_Obj}) ->
+Remotes = lists:keydelete(node(), 1, Pref_List),
 
-% lists:foreach(
-% 	fun({{Node, VNode_Id}, }) %% MAP FALLBACKS TO THE PRIMARY %%
-% )
+lists:foreach(
+	fun({Node, VNode_Id}) ->
+		sulibarri_dht_vnode_router:route(Node, VNode_Id, {replicate_put, Frontier_Obj, self()})
+	end,
+	Remotes
+),
+{next_state, waiting_remote, State}.
+
+waiting_remote(_Result, State = #state{origin = Origin, acks = Acks, w = W}) ->
+New_State = State#state{acks = Acks + 1},
+case New_State#state.acks of 
+		W -> 
+			sulibarri_dht_client:reply(Origin, {info, put_success}),
+			{stop, normal, New_State};
+		_ -> {next_state, waiting_remote, New_State}
+end.
 
 
 %% @private

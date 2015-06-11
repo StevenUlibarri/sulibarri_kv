@@ -44,6 +44,12 @@ start_link() ->
 get_ring_state() ->
 	gen_server:call(?SERVER, get_state).
 
+get_nodes() ->
+    gen_server:call(?SERVER, nodes).
+
+new_cluster(Nodes) ->
+    gen_server:cast(?SERVER, {new_cluster, Nodes}).
+
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -51,27 +57,39 @@ get_ring_state() ->
 init([]) ->
     case sulibarri_dht_ring:read_ring(?RING_PATH) of
         not_found ->
-            lager:warning("No Ring file found, creating new one"),
-            State = sulibarri_dht_ring:new_ring([node()]),
-            sulibarri_dht_ring:write_ring(?RING_PATH, State);
-        State -> ok
+            lager:warning("No ring file"),
+            Ring = undefined;
+            % lager:warning("No Ring file found, creating new one"),
+            % State = sulibarri_dht_ring:new_ring([node()]),
+            % sulibarri_dht_ring:write_ring(?RING_PATH, State);
+        Ring -> 
+            Ids = get_Vnode_Ids(Ring),
+            Nodes = sulibarri_dht_ring:get_nodes(Ring),
+            sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
+            sulibarri_dht_node_watcher:node_up(node(), Nodes)
     end,
-    VNodes = sulibarri_dht_ring:get_vnodes_for_node(node(), State),
-    Ids = lists:foldl(
-        fun({_, VNode_Id, _}, Acc) ->
-            [VNode_Id | Acc]
-        end,
-        [],
-        VNodes
-    ),
-    sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
-    {ok, State}.
+    {ok, Ring}.
 
 handle_call(get_state, _From, State) ->
-    {reply, State, State}.
+    {reply, State, State};
 
-handle_cast(_Request, State) ->
-    {noreply, State}.
+handle_call(nodes, _From, State) ->
+    Nodes = sulibarri_dht_ring:get_nodes(State),
+    {reply, Nodes, State}.
+
+
+handle_cast({new_cluster, Nodes}, State) ->
+    Ring = sulibarri_dht_ring:new_ring(Nodes),
+    %% abCast to cluster new ring
+    Nodes = sulibarri_dht_ring:get_nodes(Ring),
+    gen_server:abcast(Nodes, ?SERVER, {new_ring, Ring}),
+    {noreply, State};
+
+handle_cast({new_ring, Ring}, _State) ->
+    sulibarri_dht_ring:write_ring(?RING_PATH, Ring),
+    Ids = get_Vnode_Ids(Ring),
+    sulibarri_dht_vnode_router:start_vnode(lists:reverse(Ids)),
+    {noreply, Ring}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -86,3 +104,13 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
 
+get_Vnode_Ids(Ring) ->
+    VNodes = sulibarri_dht_ring:get_vnodes_for_node(node(), Ring),
+    Ids = lists:foldl(
+        fun({_, VNode_Id, _}, Acc) ->
+            [VNode_Id | Acc]
+        end,
+        [],
+        VNodes
+    ),
+    Ids.

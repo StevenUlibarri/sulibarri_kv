@@ -16,8 +16,10 @@
 		  get_vnodes_for_node/2,
 		  get_replication_factors/1,
 		  get_pref_list/2,
-		  primaries/1,
-		  secondaries/1,
+		  primaries/2,
+		  filtered_primaries/2,
+		  % secondaries/2,
+		  get_subbed_pref_list/2,
 		  vnode_belongs_to/3
 		  ]).
 
@@ -97,34 +99,73 @@ get_pref_list(Key, Ring_State) ->
 	Pref_List.
 	% prune_pref_list(Pref_List).
 
-% get_subbed_pref_list(Pref_List, N) ->
+get_subbed_pref_list(Key, Ring_State) ->
+	{N,_,_} = get_replication_factors(Ring_State#ring_state.partition_table),
+	Pref_List = get_pref_list(Key, Ring_State),
+	{Primaries, Secondaries} = lists:split(N, Pref_List),
+	Up_Primaries = filter_down_nodes(Primaries),
+	Subbed = sub_pref_list(Up_Primaries, Secondaries, [], N),
+	map_handoffs(Up_Primaries, Subbed).
 
+sub_pref_list([], _, Merged, N) when length(Merged) =:= N -> 
+	lists:reverse(Merged);
+sub_pref_list([{Entry, Status} | T] = Primaries, [], Merged, N) when length(Primaries) =/= 0 ->
+	case Status of
+		up ->
+			sub_pref_list(T, [], [Entry | Merged], N);
+		down ->
+			sub_pref_list(T, [], Merged, N)
+	end;	
+sub_pref_list(_, [], Merged, _) ->
+	lists:reverse(Merged);
+sub_pref_list([], [H | T], Merged, N) -> 
+	sub_pref_list([], T, [H | Merged], N);
+sub_pref_list([{Entry, up} | T], Secondaries, Merged, N) ->
+	sub_pref_list(T, Secondaries, [Entry | Merged], N);
+sub_pref_list([{_, down} | T], [SH | ST], Merged, N) ->
+	sub_pref_list(T, ST, [SH | Merged], N).
 
-primaries(Pref_List) ->
-	Primaries = lists:foldl(
-		fun({Entry, Role}, Acc) ->
-			case Role of
-				primary -> [Entry | Acc];
-				_ -> Acc
+map_handoffs(Up_Primaries, Subbed_List) ->
+	lists:zipwith(
+		fun({{P_Node, Id}, Status}, {H_Node, _}) ->
+			case Status of
+				down -> {H_Node, Id};
+				up -> {P_Node, Id}
 			end
 		end,
-		[],
-		Pref_List
-	),
-	lists:reverse(Primaries).
+		Up_Primaries,
+		Subbed_List
+	).
 
-secondaries(Pref_List) ->
-	Secondaries = lists:foldl(
-		fun({Entry, Role}, Acc) ->
-			case Role of
-				secondary -> [Entry | Acc];
-				_ -> Acc
-			end
+
+primaries(Key, Ring) ->
+	{N,_,_} = get_replication_factors(Ring#ring_state.partition_table),
+	Pref_List = get_pref_list(Key, Ring),
+	Primaries = lists:sublist(Pref_List, N),
+	Primaries.
+
+filtered_primaries(Key, Ring) ->
+	Filtered = filter_down_nodes(primaries(Key,Ring)),
+	Filtered2 = lists:foldl(
+		fun({Entry, _}, Acc) ->
+			[Entry | Acc]
 		end,
-		[],
-		Pref_List
+		[], Filtered
 	),
-	lists:reverse(Secondaries).
+	lists:reverse(Filtered2).
+
+% secondaries(Pref_List) ->
+% 	Secondaries = lists:foldl(
+% 		fun({Entry, Role}, Acc) ->
+% 			case Role of
+% 				secondary -> [Entry | Acc];
+% 				_ -> Acc
+% 			end
+% 		end,
+% 		[],
+% 		Pref_List
+% 	),
+% 	lists:reverse(Secondaries).
 
 get_vnodes_for_node(Node, Ring_State) ->
 	Table = Ring_State#ring_state.partition_table,
@@ -154,12 +195,12 @@ get_replication_factors(Table) ->
 
 %% PRIVATE %%
 
-prune_pref_list(List) ->
+filter_down_nodes(List) ->
 	Pruned = lists:foldl(
-		fun({{Node, _}, _} = Entry, Acc) ->
+		fun({Node, _} = Entry, Acc) ->
 			case net_adm:ping(Node) of
-				pang -> Acc;
-				pong -> [Entry | Acc]
+				pang -> [{Entry, down} | Acc];
+				pong -> [{Entry, up} | Acc]
 			end
 		end,
 		[],
@@ -237,17 +278,17 @@ get_primaries(Table, N_Val, Primaries) ->
 	case length(Primaries) of
 		N_Val -> {Table, lists:reverse(Primaries)};
 		_ ->
-			Next_Primary = {P_Owner,_, _} = lists:nth(1, Table),
+			{P_Owner, Id, _} = lists:nth(1, Table),
 			New_Table = lists:filter(fun({Node,_, _}) -> Node =/= P_Owner end,Table),
-			get_primaries(New_Table, N_Val, [{Next_Primary, primary} | Primaries])
+			get_primaries(New_Table, N_Val, [{P_Owner, Id} | Primaries])
 	end.
 
 get_secondaries(Table) -> get_secondaries(Table, []).
 get_secondaries([], Secondaries) -> lists:reverse(Secondaries);
 get_secondaries(Table, Secondaries)->
-	Next_Secondary = {S_Owner,_, _} = lists:nth(1, Table),
+	{S_Owner, Id, _} = lists:nth(1, Table),
 	New_Table = lists:filter(fun({Node,_, _}) -> Node =/= S_Owner end, Table),
-	get_secondaries(New_Table, [{Next_Secondary, secondary} | Secondaries]).
+	get_secondaries(New_Table, [{S_Owner, Id} | Secondaries]).
 	
 lookup(Key, Table) ->
 	Hash = hash(Key),

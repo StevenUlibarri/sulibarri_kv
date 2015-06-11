@@ -4,7 +4,7 @@
 
 -behaviour(gen_fsm).
 -export([init/1, handle_info/3, terminate/3, code_change/4, handle_event/3, handle_sync_event/4]).
-
+-export([active/2]).
 -define(FILE_PATH(VnodeID),
     "storage/" ++ atom_to_list(node()) ++ "/" ++ integer_to_list(VNodeId) ++ ".store").
 % -define(HINTED_FILE_PATH(VnodeID),
@@ -36,17 +36,19 @@ init([VNodeId]) ->
 
 %% Active
 active({local_put, Obj_Inc, Fsm_Sender}, State) ->
+    lager:notice("Local Put for key:~p", [Obj_Inc#object.key]),
     Res = case get(Obj_Inc#object.key, State#state.storage_file_path) of
         {error, _} = Err -> Err;
         [] -> 
             New_Obj = clock_ops(Obj_Inc, State#state.vNodeId),
-            case ?MODULE:put(New_Obj, State#state.storage_file_path) of
+            case obj_put(New_Obj, State#state.storage_file_path) of
                 ok -> New_Obj;
                 Err -> Err
             end;
         [Obj_Local] ->
             New_Obj = clock_ops(Obj_Inc, Obj_Local, State#state.vNodeId),
-            case ?MODULE:put(New_Obj, State#state.storage_file_path) of
+            % lager:notice("local merge: ~p", [New_Obj]),
+            case obj_put(New_Obj, State#state.storage_file_path) of
                 ok -> New_Obj;
                 Err -> Err
             end
@@ -56,21 +58,53 @@ active({local_put, Obj_Inc, Fsm_Sender}, State) ->
     {next_state, active, State};
    
 active({replicate_put, Obj_Inc, Fsm_Sender}, State) ->
+    lager:notice("Replica Put for key:~p", [Obj_Inc#object.key]),
     Res = case get(Obj_Inc#object.key, State#state.storage_file_path) of
         {error, _} = Err -> Err;
         [] ->
-            case ?MODULE:put(Obj_Inc, State#state.storage_file_path) of
-                ok -> Obj_Inc;
+            case obj_put(Obj_Inc, State#state.storage_file_path) of
+                ok -> ack;
                 Err -> Err
             end;
-        Obj_Local ->
+        [Obj_Local] ->
             New_Obj = replica_merge(Obj_Inc, Obj_Local),
-            case ?MODULE:put(New_Obj, State#state.storage_file_path) of
-                ok -> Obj_Inc;
+            % lager:notice("replica merge: ~p", [New_Obj]),
+            case obj_put(New_Obj, State#state.storage_file_path) of
+                ok -> ack;
                 Err -> Err
             end
     end,
     reply(Fsm_Sender, Res),
+    {next_state, active, State};
+
+active({handoff, Node}, State = #state{vNodeId = Id, storage_file_path = Path}) ->
+    lager:notice("Handoff Initialized for Vnode ~p~ndestination ~p", [Id, Node]),
+    dets:open_file(Path, ?DETS_ARGS),
+    Objs = dets:foldl(
+        fun(Obj, Acc) ->
+            [Obj | Acc]
+        end,
+        [],
+        Path
+    ),
+    sulibarri_dht_vnode_router:route(Node, Id, {recieve_handoff, Objs}),
+    dets:close(Path),
+    {stop, normal, State};
+
+active({recieve_handoff, Objs}, State = #state{vNodeId = Id, storage_file_path = Path}) ->
+    lager:notice("Handoff Recieved for Vnode ~p", [Id]),
+    lists:foreach(
+        fun(Obj) ->
+            Key = sulibarri_dht_object:get_key(Obj),
+            case get(Key, Path) of
+                [] -> obj_put(Obj, Path);
+                [Obj_Local] ->
+                    New_Obj = replica_merge(Obj, Obj_Local),
+                    obj_put(New_Obj, Path)
+            end
+        end,
+        Objs
+    ),
     {next_state, active, State};
 
 
@@ -124,8 +158,9 @@ handle_info(_Info, StateName, State) ->
     {next_state, StateName, State}.
 
 %% @private
-terminate(_Reason, _StateName, State) ->
-    sulibarri_dht_vnode_router:degregister(State#state.vNodeId),
+terminate(_Reason, _StateName, _State = #state{vNodeId = Id, storage_file_path = Path}) ->
+    sulibarri_dht_vnode_router:degregister(Id),
+    clean(Path),
     ok.
 
 %% @private
@@ -140,11 +175,16 @@ get(Key, File) ->
     dets:close(File),
     Obj.
 
-put(Obj, File) ->
+obj_put(Obj, File) ->
     dets:open_file(File, ?DETS_ARGS),
     Res = dets:insert(File, Obj),
     dets:close(File),
     Res.
+
+clean(Path) ->
+    dets:open_file(Path, ?DETS_ARGS),
+    dets:delete_all_objects(Path),
+    dets:close(Path).
 
 % delete(Obj, File) ->
 %     % dets:open_file(File, []),
@@ -185,8 +225,12 @@ clock_ops(Inc, Id) ->
     New_Obj2.
 
 replica_merge(Inc, Local) ->
-    #object{clock = Clock_Inc} = Inc,
-    #object{clock = Clock_Local} = Local,
+    % lager:notice("~p", [Inc]),
+    % lager:notice("~p", [Local]),
+    Clock_Inc = sulibarri_dht_object:get_clock(Inc),
+    Clock_Local = sulibarri_dht_object:get_clock(Local),
+    % #object{clock = Clock_Inc} = Inc,
+    % #object{clock = Clock_Local} = Local,
 
     case sulibarri_dht_vclock:dominates(Clock_Inc, Clock_Local) of
         true -> Inc;
