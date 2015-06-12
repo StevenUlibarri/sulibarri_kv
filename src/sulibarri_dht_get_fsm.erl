@@ -16,6 +16,8 @@
 		responses = []
 	}).
 
+-compile([export_all]).
+
 start_link(Key, Origin) ->
 	gen_fsm:start_link(?MODULE, [Key, Origin], []).
 
@@ -39,7 +41,7 @@ prepare(timeout, State = #state{key = Key,
 
 	New_State = State#state{n = N, r = R, pref_list = Pref_List},
 
-	Up_Primaries = sulibarri_dht_ring:filterd_primaries(Key, Ring),
+	Up_Primaries = sulibarri_dht_ring:filtered_primaries(Key, Ring),
 
 	LocalPrimary = [Coord || {Node, _} = Coord <- Up_Primaries, Node =:= node()],
 
@@ -47,8 +49,8 @@ prepare(timeout, State = #state{key = Key,
 		{[], _} ->
 			{next_state, validate, New_State, 0};
 		{_, true} ->
-			Random_Primary = lists:nth(random:uniform(length(Up_Primaries)), Up_Primaries),
-			supervisor:start_child({sulibarri_dht_get_fsm, Random_Primary}, [Key, Origin]),
+			{Random_Primary, _} = lists:nth(random:uniform(length(Up_Primaries)), Up_Primaries),
+			supervisor:start_child({sulibarri_dht_get_fsm_sup, Random_Primary}, [Key, Origin]),
 			{stop, normal, New_State};
 		_ ->
 			{next_state, validate, New_State, 0}
@@ -95,9 +97,9 @@ waiting(Resp, State =#state{origin = Origin,
 			Merged_Obj = merge_responses(New_Responses),
 			case Merged_Obj of
 				not_found ->
-					sulibarri_dht_client:reply(Origin, {info, {not_found, Key}});
+					sulibarri_dht_client:reply(Origin,  {not_found, Key});
 				_ ->
-					sulibarri_dht_client:reply(Origin, {info, {ok, Merged_Obj}})
+					sulibarri_dht_client:reply(Origin, {ok, Merged_Obj})
 			end,
 			{next_state, waiting, New_State};		
 		N ->

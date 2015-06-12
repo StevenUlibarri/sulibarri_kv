@@ -56,8 +56,8 @@ prepare(timeout, State = #state{inc_object = Obj,
 			{next_state, validate, New_State, 0};
 		{_, true} ->
 			%I am not a primary, forward to random primary
-			Random_Primary = lists:nth(random:uniform(length(Up_Primaries)), Up_Primaries),
-			supervisor:start_child({sulibarri_dht_put_fsm, Random_Primary}, [Obj, Origin]),
+			{Random_Primary, _} = lists:nth(random:uniform(length(Up_Primaries)), Up_Primaries),
+			supervisor:start_child({sulibarri_dht_put_fsm_sup, Random_Primary}, [Obj, Origin]),
 			{stop, normal, New_State};
 		_ ->
 			%I am a primary, I can coord

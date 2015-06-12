@@ -76,8 +76,8 @@ merge_objects(Obj_Local, Obj_Incoming) ->
 	New_Clock = sulibarri_dht_vclock:merge(
 			get_clock(Obj_Local),
 			get_clock(Obj_Incoming)),
-	New_Values = merge_values(get_values(Obj_Local),
-			get_values(Obj_Incoming)),
+	New_Values = merge_values(get_dotted_values(Obj_Local),
+			get_dotted_values(Obj_Incoming)),
 	Obj_Local#object{clock = New_Clock, values = New_Values}.
 
 % @private

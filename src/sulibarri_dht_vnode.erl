@@ -40,14 +40,16 @@ active({local_put, Obj_Inc, Fsm_Sender}, State) ->
     Res = case get(Obj_Inc#object.key, State#state.storage_file_path) of
         {error, _} = Err -> Err;
         [] -> 
+            % lager:notice("No local obj")
             New_Obj = clock_ops(Obj_Inc, State#state.vNodeId),
+            % lager:notice("local put: ~p", [New_Obj]),
             case obj_put(New_Obj, State#state.storage_file_path) of
                 ok -> New_Obj;
                 Err -> Err
             end;
         [Obj_Local] ->
             New_Obj = clock_ops(Obj_Inc, Obj_Local, State#state.vNodeId),
-            % lager:notice("local merge: ~p", [New_Obj]),
+            lager:notice("obj exists, checking clocks"),
             case obj_put(New_Obj, State#state.storage_file_path) of
                 ok -> New_Obj;
                 Err -> Err
@@ -67,6 +69,7 @@ active({replicate_put, Obj_Inc, Fsm_Sender}, State) ->
                 Err -> Err
             end;
         [Obj_Local] ->
+            lager:notice("obj exists"),
             New_Obj = replica_merge(Obj_Inc, Obj_Local),
             % lager:notice("replica merge: ~p", [New_Obj]),
             case obj_put(New_Obj, State#state.storage_file_path) of
@@ -107,7 +110,6 @@ active({recieve_handoff, Objs}, State = #state{vNodeId = Id, storage_file_path =
     ),
     {next_state, active, State};
 
-
 % active({local_delete, Obj, Fsm_Sender}, State) ->
 %     ;
 % active({replicate_delete, Obj, Fsm_Sender}, State) ->
@@ -119,7 +121,7 @@ active({get, Key, Fsm_Sender}, State) ->
         [] -> not_found;
         [Obj] -> Obj
     end,
-    reply(Fsm_Sender, {Res, {node(), State#state.vNodeId}}),
+    reply(Fsm_Sender, Res),
     {next_state, active, State};
 
 % active({read_repair, Obj, Fsm_Sender}, State) ->
@@ -203,12 +205,14 @@ clock_ops(Inc, Local, Id) ->
 
     case sulibarri_dht_vclock:descends(Clock_Inc, Clock_Local) of
         true ->
+            lager:notice("Incoming descends local"),
             New_Obj1 = sulibarri_dht_object:increment_clock(Inc, Id),
             [Val] = sulibarri_dht_object:get_values(New_Obj1),
             Dot = sulibarri_dht_object:get_dot(New_Obj1, Id),
             New_Obj2 = sulibarri_dht_object:set_value(New_Obj1, Val, Dot),
             New_Obj2;
         false ->
+            lager:warning("Clocks Concurrent, adding sibling"),
             Merged_Clock = sulibarri_dht_vclock:merge(Clock_Inc, Clock_Local),
             Incremented_Clock = sulibarri_dht_vclock:increment(Merged_Clock, Id),
             [New_Val] = sulibarri_dht_object:get_values(Inc),
@@ -237,8 +241,11 @@ replica_merge(Inc, Local) ->
     % #object{clock = Clock_Local} = Local,
 
     case sulibarri_dht_vclock:dominates(Clock_Inc, Clock_Local) of
-        true -> Inc;
+        true ->
+            lager:notice("Inc replica dominates local, replacing"), 
+            Inc;
         false ->
+            lager:notice("merging replicas"),
             New_Obj = sulibarri_dht_object:merge_objects(Inc, Local),
             New_Obj
     end. 

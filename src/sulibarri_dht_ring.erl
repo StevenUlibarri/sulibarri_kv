@@ -104,7 +104,8 @@ get_subbed_pref_list(Key, Ring_State) ->
 	Pref_List = get_pref_list(Key, Ring_State),
 	{Primaries, Secondaries} = lists:split(N, Pref_List),
 	Up_Primaries = filter_down_nodes(Primaries),
-	Subbed = sub_pref_list(Up_Primaries, Secondaries, [], N),
+	Up_Secondaries = filter_down_nodes(Secondaries),
+	Subbed = sub_pref_list(Up_Primaries, ugggg(Up_Secondaries), [], N),
 	map_handoffs(Up_Primaries, Subbed).
 
 sub_pref_list([], _, Merged, N) when length(Merged) =:= N -> 
@@ -137,6 +138,15 @@ map_handoffs(Up_Primaries, Subbed_List) ->
 		Subbed_List
 	).
 
+ugggg(Secondaries) ->
+	Fuuu = lists:foldl(
+		fun({Entry, _}, Acc) ->
+			[Entry | Acc]
+		end,
+		[],
+		Secondaries
+	),
+	lists:reverse(Fuuu).
 
 primaries(Key, Ring) ->
 	{N,_,_} = get_replication_factors(Ring#ring_state.partition_table),
